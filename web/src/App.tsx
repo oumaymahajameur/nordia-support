@@ -18,12 +18,23 @@ export default function App() {
   const visible = useMemo(() => applyFilters(tickets, filters), [tickets, filters]);
   const selected = tickets.find((t) => t.id === selectedId) ?? null;
 
+  function closeDetail() {
+    const id = selectedId;
+    setSelectedId(null);
+    // Give the focus back to the ticket that was open
+    setTimeout(() => {
+      document.querySelector<HTMLElement>(`[data-ticket-id="${id}"]`)?.focus();
+    }, 0);
+  }
+
   // Escape closes the detail panel
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSelectedId(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedId !== null) closeDetail();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  });
 
   // The notice disappears by itself
   useEffect(() => {
@@ -42,7 +53,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">R
+    <div className="app">
       <header>
         <h1>Nordia Support</h1>
       </header>
@@ -77,7 +88,7 @@ export default function App() {
             ticket={selected}
             saving={pending.has(selected.id)}
             onChangeStatus={(to) => void handleChange(selected.id, to)}
-            onClose={() => setSelectedId(null)}
+            onClose={closeDetail}
           />
         )}
       </main>

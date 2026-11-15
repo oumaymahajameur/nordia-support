@@ -14,6 +14,7 @@ export function TicketList({ tickets, selectedId, onSelect }: Props) {
         <li key={t.id}>
           <button
             type="button"
+            data-ticket-id={t.id}
             className="ticket"
             aria-current={t.id === selectedId ? "true" : undefined}
             onClick={() => onSelect(t.id)}

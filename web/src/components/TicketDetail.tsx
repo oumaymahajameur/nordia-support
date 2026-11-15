@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { PRIORITY_LABEL, STATUS_LABEL, formatDate } from "../lib/labels";
 import { canTransition } from "../lib/transitions";
 import { STATUSES, type Status, type Ticket } from "../types";
@@ -10,10 +11,17 @@ interface Props {
 }
 
 export function TicketDetail({ ticket, saving, onChangeStatus, onClose }: Props) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Move focus to the panel when a ticket opens
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [ticket.id]);
+
   return (
     <aside className="detail" aria-label="Ticket details">
       <button type="button" className="close" onClick={onClose}>← Back to list</button>
-      <h2>{ticket.title}</h2>
+      <h2 ref={headingRef} tabIndex={-1}>{ticket.title}</h2>
       <dl>
         <dt>Customer</dt><dd>{ticket.customer}</dd>
         <dt>Requester</dt><dd>{ticket.requester}</dd>
