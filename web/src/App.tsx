@@ -1,122 +1,92 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useMemo, useState } from "react";
+import { Filters } from "./components/Filters";
+import { TicketDetail } from "./components/TicketDetail";
+import { TicketList } from "./components/TicketList";
+import { useTickets } from "./hooks/useTickets";
+import { STATUS_LABEL } from "./lib/labels";
+import { DEFAULT_FILTERS, applyFilters } from "./lib/tickets";
+import type { Status } from "./types";
 
-function App() {
-  const [count, setCount] = useState(0)
+type Notice = { kind: "error" | "success"; text: string };
+
+export default function App() {
+  const { tickets, state, error, reload, changeStatus, pending } = useTickets();
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+
+  const visible = useMemo(() => applyFilters(tickets, filters), [tickets, filters]);
+  const selected = tickets.find((t) => t.id === selectedId) ?? null;
+
+  // Escape closes the detail panel
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSelectedId(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // The notice disappears by itself
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 5000);
+    return () => clearTimeout(id);
+  }, [notice]);
+
+  async function handleChange(id: number, to: Status) {
+    const result = await changeStatus(id, to);
+    setNotice(
+      result.ok
+        ? { kind: "success", text: `Status updated to “${STATUS_LABEL[to]}”.` }
+        : { kind: "error", text: result.message },
+    );
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <header>
+        <h1>Nordia Support</h1>
+      </header>
 
-      <div className="ticks"></div>
+      <main className={selected ? "has-detail" : undefined}>
+        <section className="list-pane" aria-label="Tickets">
+          <Filters value={filters} onChange={setFilters} shown={visible.length} total={tickets.length} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {state === "loading" && <p role="status" className="state">Loading tickets…</p>}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          {state === "error" && (
+            <div role="alert" className="state error">
+              <p>{error}</p>
+              <button type="button" onClick={() => void reload()}>Try again</button>
+            </div>
+          )}
+
+          {state === "ready" && visible.length === 0 && (
+            <div className="state">
+              <p>No ticket matches your filters.</p>
+              <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)}>Reset filters</button>
+            </div>
+          )}
+
+          {state === "ready" && visible.length > 0 && (
+            <TicketList tickets={visible} selectedId={selectedId} onSelect={setSelectedId} />
+          )}
+        </section>
+
+        {selected && (
+          <TicketDetail
+            ticket={selected}
+            saving={pending.has(selected.id)}
+            onChangeStatus={(to) => void handleChange(selected.id, to)}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
+      </main>
+
+      {notice && (
+        <div className={`toast ${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>
+          {notice.text}
+        </div>
+      )}
+    </div>
+  );
 }
-
-export default App
