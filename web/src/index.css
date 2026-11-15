@@ -57,3 +57,17 @@ main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-
   border-radius: 8px; color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
 .toast.error { background: var(--danger); }
 .toast.success { background: var(--ok); }
+/* Status badges: each status is distinguishable at a glance */
+.s-open { background: #e3ecff; color: #1a3f9c; }
+.s-in_progress { background: #fff3cd; color: #6b4e00; }
+.s-waiting_customer { background: #efe3ff; color: #5a2a9c; }
+
+/* Sticky header + smoother interactions */
+header { position: sticky; top: 0; z-index: 10; }
+.ticket { transition: border-color .15s, box-shadow .15s; }
+.ticket:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

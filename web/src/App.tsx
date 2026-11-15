@@ -42,7 +42,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app">R
       <header>
         <h1>Nordia Support</h1>
       </header>
