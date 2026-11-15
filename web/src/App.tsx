@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Filters } from "./components/Filters";
 import { TicketDetail } from "./components/TicketDetail";
 import { TicketList } from "./components/TicketList";
+import { useTheme } from "./hooks/useTheme";
 import { useTickets } from "./hooks/useTickets";
 import { STATUS_LABEL } from "./lib/labels";
 import { DEFAULT_FILTERS, applyFilters } from "./lib/tickets";
@@ -18,6 +19,7 @@ const ALLOWED = {
 
 export default function App() {
   const { tickets, state, error, reload, changeStatus, pending } = useTickets();
+  const { theme, toggle } = useTheme();
   const [filters, setFilters] = useState(() => readFilters(DEFAULT_FILTERS, ALLOWED));
   const [selectedId, setSelectedId] = useState<number | null>(readSelectedId);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -75,6 +77,14 @@ export default function App() {
     <div className="app">
       <header>
         <h1>Nordia Support</h1>
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={toggle}
+          aria-pressed={theme === "dark"}
+        >
+          Dark mode
+        </button>
       </header>
 
       <main className={selected ? "has-detail" : undefined}>

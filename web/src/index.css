@@ -1,16 +1,52 @@
 :root {
+  color-scheme: light;
   --bg: #f6f7f9; --surface: #fff; --text: #1b2330; --muted: #5b6678;
-  --border: #d9dee7; --accent: #2457d6; --danger: #b3261e; --ok: #1e7a46;
+  --border: #d9dee7; --accent: #2457d6; --on-accent: #fff;
+  --danger: #b3261e; --ok: #1e7a46; --on-solid: #fff;
+  --shadow: rgba(0, 0, 0, .25); --shadow-soft: rgba(0, 0, 0, .08);
+
+  --badge-bg: #e8ebf1; --badge-fg: var(--text);
+  --p-urgent-bg: #fde4e1; --p-urgent-fg: #8a1c14;
+  --p-high-bg: #ffecd1;   --p-high-fg: #7a4300;
+  --p-medium-bg: #e3ecff; --p-medium-fg: #1a3f9c;
+  --s-open-bg: #e3ecff;      --s-open-fg: #1a3f9c;
+  --s-progress-bg: #fff3cd;  --s-progress-fg: #6b4e00;
+  --s-waiting-bg: #efe3ff;   --s-waiting-fg: #5a2a9c;
+  --s-resolved-bg: #dcf3e5;  --s-resolved-fg: #14562f;
+
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text); background: var(--bg);
 }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12141a; --surface: #1c1f27; --text: #e8eaf0; --muted: #9aa2b1;
+  --border: #323744; --accent: #7ea2ff; --on-accent: #0f1626;
+  --danger: #ff8a80; --ok: #6fd39a; --on-solid: #fff;
+  --shadow: rgba(0, 0, 0, .6); --shadow-soft: rgba(0, 0, 0, .35);
+
+  --badge-bg: #2b303c; --badge-fg: var(--text);
+  --p-urgent-bg: #4a1f1c; --p-urgent-fg: #ffb4ab;
+  --p-high-bg: #4a3314;   --p-high-fg: #ffcf8a;
+  --p-medium-bg: #1f2f57; --p-medium-fg: #aec6ff;
+  --s-open-bg: #1f2f57;      --s-open-fg: #aec6ff;
+  --s-progress-bg: #4a3d10;  --s-progress-fg: #ffe38a;
+  --s-waiting-bg: #36244f;   --s-waiting-fg: #d8bfff;
+  --s-resolved-bg: #1b3f2b;  --s-resolved-fg: #9fe3bb;
+}
+
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); }
 button, input, select { font: inherit; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-header { padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
 h1 { margin: 0; font-size: 1.25rem; }
+.theme-toggle { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: transparent; color: var(--text); cursor: pointer; }
+.theme-toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
 main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
 @media (min-width: 900px) { main.has-detail { grid-template-columns: 1.2fr 1fr; } }
 
@@ -28,15 +64,15 @@ main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-
 .ticket-customer { color: var(--muted); font-size: .9rem; }
 .ticket-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .85rem; color: var(--muted); }
 
-.badge { padding: 2px 8px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #e8ebf1; color: var(--text); }
-.p-urgent { background: #fde4e1; color: #8a1c14; }
-.p-high { background: #ffecd1; color: #7a4300; }
-.p-medium { background: #e3ecff; color: #1a3f9c; }
-.s-resolved { background: #dcf3e5; color: #14562f; }
+.badge { padding: 2px 8px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: var(--badge-bg); color: var(--badge-fg); }
+.p-urgent { background: var(--p-urgent-bg); color: var(--p-urgent-fg); }
+.p-high { background: var(--p-high-bg); color: var(--p-high-fg); }
+.p-medium { background: var(--p-medium-bg); color: var(--p-medium-fg); }
+.s-resolved { background: var(--s-resolved-bg); color: var(--s-resolved-fg); }
 
 .state { padding: 24px; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: 8px; }
 .state.error { border-color: var(--danger); color: var(--danger); }
-.state button, .close { padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; }
+.state button, .close { padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); border-radius: 6px; cursor: pointer; }
 .close { background: transparent; color: var(--accent); margin-bottom: 12px; }
 
 .detail { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; align-self: start; }
@@ -46,7 +82,7 @@ main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-
 .detail dd { margin: 0; }
 .description { padding: 12px; background: var(--bg); border-radius: 6px; }
 .status-field { display: flex; flex-direction: column; gap: 4px; max-width: 280px; }
-.status-field select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+.status-field select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
 
 /* Mobile: the detail panel covers the screen */
 @media (max-width: 899px) {
@@ -54,18 +90,19 @@ main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-
 }
 
 .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); padding: 12px 18px;
-  border-radius: 8px; color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
-.toast.error { background: var(--danger); }
-.toast.success { background: var(--ok); }
+  border-radius: 8px; color: var(--on-solid); box-shadow: 0 4px 16px var(--shadow); max-width: calc(100% - 32px); }
+.toast.error { background: #b3261e; }
+.toast.success { background: #1e7a46; }
+
 /* Status badges: each status is distinguishable at a glance */
-.s-open { background: #e3ecff; color: #1a3f9c; }
-.s-in_progress { background: #fff3cd; color: #6b4e00; }
-.s-waiting_customer { background: #efe3ff; color: #5a2a9c; }
+.s-open { background: var(--s-open-bg); color: var(--s-open-fg); }
+.s-in_progress { background: var(--s-progress-bg); color: var(--s-progress-fg); }
+.s-waiting_customer { background: var(--s-waiting-bg); color: var(--s-waiting-fg); }
 
 /* Sticky header + smoother interactions */
 header { position: sticky; top: 0; z-index: 10; }
 .ticket { transition: border-color .15s, box-shadow .15s; }
-.ticket:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.ticket:hover { box-shadow: 0 2px 8px var(--shadow-soft); }
 
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
