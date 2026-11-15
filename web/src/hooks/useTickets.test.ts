@@ -16,6 +16,7 @@ const ticket: Ticket = {
 };
 
 beforeEach(() => {
+  vi.mocked(api.listTickets).mockReset();
   vi.mocked(api.listTickets).mockResolvedValue([ticket]);
   vi.mocked(api.updateStatus).mockReset();
 });
@@ -57,5 +58,38 @@ describe("useTickets.changeStatus", () => {
 
     await act(async () => { await result.current.changeStatus(1, "resolved"); });
     expect(result.current.tickets[0].status).toBe("in_progress");
+  });
+
+  it("ignores a second change on the same ticket while one is in flight", async () => {
+    let resolve!: (t: Ticket) => void;
+    vi.mocked(api.updateStatus).mockReturnValue(new Promise((r) => (resolve = r)));
+    const { result } = await setup();
+
+    let first!: Promise<unknown>;
+    let second: Awaited<ReturnType<typeof result.current.changeStatus>> | undefined;
+    await act(async () => {
+      first = result.current.changeStatus(1, "resolved");
+      second = await result.current.changeStatus(1, "waiting_customer");
+    });
+
+    expect(second).toEqual({ ok: false, message: expect.any(String) });
+    expect(api.updateStatus).toHaveBeenCalledTimes(1);
+
+    await act(async () => { resolve({ ...ticket, status: "resolved" }); await first; });
+  });
+
+  it("keeps the latest load when an older one answers last", async () => {
+    let resolveSlow!: (t: Ticket[]) => void;
+    vi.mocked(api.listTickets)
+      .mockReset()
+      .mockReturnValueOnce(new Promise((r) => (resolveSlow = r)))
+      .mockResolvedValueOnce([{ ...ticket, title: "fresh" }]);
+
+    const { result } = renderHook(() => useTickets());
+    await act(async () => { await result.current.reload(); });
+    await waitFor(() => expect(result.current.tickets[0]?.title).toBe("fresh"));
+
+    await act(async () => { resolveSlow([{ ...ticket, title: "stale" }]); });
+    expect(result.current.tickets[0].title).toBe("fresh");
   });
 });
