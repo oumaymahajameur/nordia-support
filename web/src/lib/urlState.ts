@@ -22,14 +22,27 @@ export function readSelectedId(): number | null {
   return Number.isInteger(id) ? id : null;
 }
 
+/** Page number from the address bar; anything invalid means page 1. */
+export function readPage(): number {
+  const raw = new URLSearchParams(window.location.search).get("page");
+  const page = raw === null ? NaN : Number(raw);
+  return Number.isInteger(page) && page >= 1 ? page : 1;
+}
+
 /** Writes only non-default values, so the default view keeps a clean address. */
-export function writeUrl<T extends object>(filters: T, defaults: T, selectedId: number | null) {
+export function writeUrl<T extends object>(
+  filters: T,
+  defaults: T,
+  selectedId: number | null,
+  page = 1,
+) {
   const f = filters as Record<string, unknown>;
   const d = defaults as Record<string, unknown>;
   const params = new URLSearchParams();
   for (const key of Object.keys(d)) {
     if (f[key] !== d[key]) params.set(key, String(f[key]));
   }
+  if (page > 1) params.set("page", String(page));
   if (selectedId !== null) params.set("ticket", String(selectedId));
   const query = params.toString();
   window.history.replaceState(null, "", window.location.pathname + (query ? `?${query}` : ""));

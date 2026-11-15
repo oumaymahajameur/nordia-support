@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_FILTERS } from "./tickets";
-import { readFilters, readSelectedId, writeUrl } from "./urlState";
+import { readFilters, readPage, readSelectedId, writeUrl } from "./urlState";
 
 const ALLOWED = {
   status: ["all", "open", "resolved"],
@@ -31,5 +31,21 @@ describe("urlState", () => {
     expect(window.location.search).toBe("");
     writeUrl({ ...DEFAULT_FILTERS, status: "open" }, DEFAULT_FILTERS, 5);
     expect(window.location.search).toBe("?status=open&ticket=5");
+  });
+
+  it("reads the page and falls back to 1 when invalid", () => {
+    window.history.replaceState(null, "", "/?page=3");
+    expect(readPage()).toBe(3);
+    window.history.replaceState(null, "", "/?page=0");
+    expect(readPage()).toBe(1);
+    window.history.replaceState(null, "", "/?page=abc");
+    expect(readPage()).toBe(1);
+  });
+
+  it("writes the page only when it is not the first", () => {
+    writeUrl(DEFAULT_FILTERS, DEFAULT_FILTERS, null, 1);
+    expect(window.location.search).toBe("");
+    writeUrl(DEFAULT_FILTERS, DEFAULT_FILTERS, null, 2);
+    expect(window.location.search).toBe("?page=2");
   });
 });

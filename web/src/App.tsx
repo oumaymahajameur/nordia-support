@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Filters } from "./components/Filters";
+import { Pagination } from "./components/Pagination";
 import { TicketDetail } from "./components/TicketDetail";
 import { TicketList } from "./components/TicketList";
 import { useTheme } from "./hooks/useTheme";
 import { useTickets } from "./hooks/useTickets";
 import { STATUS_LABEL } from "./lib/labels";
 import { DEFAULT_FILTERS, applyFilters } from "./lib/tickets";
-import { readFilters, readSelectedId, writeUrl } from "./lib/urlState";
+import type { Filters as FiltersValue } from "./lib/tickets";
+import { readFilters, readPage, readSelectedId, writeUrl } from "./lib/urlState";
 import type { Status } from "./types";
 
 type Notice = { kind: "error" | "success"; text: string };
+
+const PAGE_SIZE = 10;
 
 const ALLOWED = {
   status: ["all", ...Object.keys(STATUS_LABEL)],
@@ -21,11 +25,20 @@ export default function App() {
   const { tickets, state, error, reload, changeStatus, pending } = useTickets();
   const { theme, toggle } = useTheme();
   const [filters, setFilters] = useState(() => readFilters(DEFAULT_FILTERS, ALLOWED));
+  const [page, setPage] = useState(readPage);
   const [selectedId, setSelectedId] = useState<number | null>(readSelectedId);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const visible = useMemo(() => applyFilters(tickets, filters), [tickets, filters]);
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageItems = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const selected = tickets.find((t) => t.id === selectedId) ?? null;
+
+  function updateFilters(next: FiltersValue) {
+    setFilters(next);
+    setPage(1); // a new search or filter always starts on page 1
+  }
 
   function closeDetail() {
     const id = selectedId;
@@ -54,8 +67,8 @@ export default function App() {
 
   // Keep the address bar in sync with the view
   useEffect(() => {
-    writeUrl(filters, DEFAULT_FILTERS, selectedId);
-  }, [filters, selectedId]);
+    writeUrl(filters, DEFAULT_FILTERS, selectedId, page);
+  }, [filters, selectedId, page]);
 
   // A link to a ticket that does not exist closes the panel instead of showing nothing
   useEffect(() => {
@@ -63,6 +76,11 @@ export default function App() {
       setSelectedId(null);
     }
   }, [state, tickets, selectedId]);
+
+  // A link to a page that does not exist (?page=99) falls back to the last page
+  useEffect(() => {
+    if (state === "ready" && page !== currentPage) setPage(currentPage);
+  }, [state, page, currentPage]);
 
   async function handleChange(id: number, to: Status) {
     const result = await changeStatus(id, to);
@@ -89,7 +107,7 @@ export default function App() {
 
       <main className={selected ? "has-detail" : undefined}>
         <section className="list-pane" aria-label="Tickets">
-          <Filters value={filters} onChange={setFilters} shown={visible.length} total={tickets.length} />
+          <Filters value={filters} onChange={updateFilters} shown={visible.length} total={tickets.length} />
 
           {state === "loading" && <p role="status" className="state">Loading tickets…</p>}
 
@@ -103,12 +121,17 @@ export default function App() {
           {state === "ready" && visible.length === 0 && (
             <div className="state">
               <p>No ticket matches your filters.</p>
-              <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)}>Reset filters</button>
+              <button type="button" onClick={() => updateFilters(DEFAULT_FILTERS)}>Reset filters</button>
             </div>
           )}
 
           {state === "ready" && visible.length > 0 && (
-            <TicketList tickets={visible} selectedId={selectedId} onSelect={setSelectedId} />
+            <>
+              <TicketList tickets={pageItems} selectedId={selectedId} onSelect={setSelectedId} />
+              {pageCount > 1 && (
+                <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
+              )}
+            </>
           )}
         </section>
 

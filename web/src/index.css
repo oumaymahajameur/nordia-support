@@ -109,3 +109,7 @@ header { position: sticky; top: 0; z-index: 10; }
   * { transition: none !important; }
 }
 .detail h2:focus { outline: none; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 12px; }
+.pagination button { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--text); cursor: pointer; }
+.pagination button:disabled { opacity: .5; cursor: not-allowed; }
