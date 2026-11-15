@@ -5,14 +5,21 @@ import { TicketList } from "./components/TicketList";
 import { useTickets } from "./hooks/useTickets";
 import { STATUS_LABEL } from "./lib/labels";
 import { DEFAULT_FILTERS, applyFilters } from "./lib/tickets";
+import { readFilters, readSelectedId, writeUrl } from "./lib/urlState";
 import type { Status } from "./types";
 
 type Notice = { kind: "error" | "success"; text: string };
 
+const ALLOWED = {
+  status: ["all", ...Object.keys(STATUS_LABEL)],
+  priority: ["all", "urgent", "high", "medium", "low"],
+  sort: ["date_desc", "date_asc", "priority_desc", "priority_asc"],
+};
+
 export default function App() {
   const { tickets, state, error, reload, changeStatus, pending } = useTickets();
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [filters, setFilters] = useState(() => readFilters(DEFAULT_FILTERS, ALLOWED));
+  const [selectedId, setSelectedId] = useState<number | null>(readSelectedId);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const visible = useMemo(() => applyFilters(tickets, filters), [tickets, filters]);
@@ -42,6 +49,18 @@ export default function App() {
     const id = setTimeout(() => setNotice(null), 5000);
     return () => clearTimeout(id);
   }, [notice]);
+
+  // Keep the address bar in sync with the view
+  useEffect(() => {
+    writeUrl(filters, DEFAULT_FILTERS, selectedId);
+  }, [filters, selectedId]);
+
+  // A link to a ticket that does not exist closes the panel instead of showing nothing
+  useEffect(() => {
+    if (state === "ready" && selectedId !== null && !tickets.some((t) => t.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [state, tickets, selectedId]);
 
   async function handleChange(id: number, to: Status) {
     const result = await changeStatus(id, to);
